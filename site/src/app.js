@@ -97,20 +97,18 @@ function renderChart() {
   const height = width < 500 ? 250 : 272;
   const left = 40, right = 12, top = 23, bottom = 32;
   const values = rows.map((row) => row.total);
-  let low = Math.min(0, ...values), high = Math.max(0, ...values);
-  const spread = high - low || 1;
-  low = low < 0 ? low - spread * 0.1 : 0;
-  high += spread * 0.12;
+  const step = 10;
+  const low = Math.min(0, Math.floor(Math.min(...values) / step) * step);
+  const high = Math.max(100, Math.ceil(Math.max(...values) / step) * step);
   const y = (value) => top + (high - value) / (high - low) * (height - top - bottom);
   const plotWidth = width - left - right;
   const slot = plotWidth / rows.length;
   const gap = slot > 6 ? 1.6 : 0.6;
   chartLayout = { left, slot };
   const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, "aria-hidden": "true" });
-  for (let i = 0; i <= 4; i++) {
-    const value = low + (high - low) * i / 4;
+  for (let value = low; value <= high; value += step) {
     svg.append(svgElement("line", { x1: left, x2: width - right, y1: y(value), y2: y(value), class: "grid-line" }));
-    svg.append(svgElement("text", { x: left - 9, y: y(value) + 4, "text-anchor": "end", class: "axis-label" }, number.format(value)));
+    svg.append(svgElement("text", { x: left - 9, y: y(value) + 3, "text-anchor": "end", class: "axis-label" }, String(value)));
   }
   svg.append(svgElement("line", { x1: left, x2: width - right, y1: y(0), y2: y(0), class: "zero-line" }));
   const now = Date.now() / 1000;
