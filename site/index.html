@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="et">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#153d32">
+  <meta name="description" content="Tänane ja homne elektri lõpphind koos võrgutasu, maksude ning müüja marginaaliga.">
+  <title>Elektrihind · Täna ja homme</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23153d32'/%3E%3Cpath d='M36 8 16 36h15l-4 20 21-29H33z' fill='%23c9ef9c'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./src/styles.css">
+  <script type="module" src="./src/app.js"></script>
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="Elektrihind avaleht"><span class="brand-icon" aria-hidden="true">ϟ</span> elektrihind<span class="brand-dot">.</span></a>
+      <span class="header-meta"><span class="status-dot"></span> Eesti hinnapiirkond <span class="divider">/</span> <span id="clock">Europe/Tallinn</span></span>
+    </header>
+
+    <main>
+      <section class="intro">
+        <p class="eyebrow">VÄHEM OLETAMIST. TARGEM TARBIMINE.</p>
+        <h1>Hea aeg elektrit kasutada<span>?</span></h1>
+        <p class="intro-text">Börsihind on alles algus. Siin näed, mis elekter sulle päriselt maksab.</p>
+      </section>
+
+      <div id="data-message" class="notice" role="status">Laen Eleringi hindu…</div>
+      <noscript><p class="notice error">Graafiku kuvamiseks luba brauseris JavaScript.</p></noscript>
+      <div id="tariff-warning" class="notice warning" role="status" hidden></div>
+
+      <div class="dashboard">
+        <div class="main-column">
+          <section class="stats" aria-label="Hindade ülevaade">
+            <article class="stat current">
+              <span class="stat-label"><span class="status-dot"></span> PRAEGU</span>
+              <strong id="current-price">—</strong><span class="unit">senti/kWh</span>
+              <span id="current-time" class="stat-foot">Kõik tarbimispõhised tasud</span>
+            </article>
+            <article class="stat"><span class="stat-label">PÄEVA KESKMINE</span><strong id="average-price">—</strong><span class="unit">senti/kWh</span><span class="stat-foot">Valitud päeva ajakeskmine</span></article>
+            <article class="stat"><span class="stat-label">KÕIGE SOODSAM</span><strong id="min-price">—</strong><span class="unit">senti/kWh</span><span id="min-time" class="stat-foot">—</span></article>
+            <article class="stat"><span class="stat-label">KÕIGE KALLIM</span><strong id="max-price">—</strong><span class="unit">senti/kWh</span><span id="max-time" class="stat-foot">—</span></article>
+          </section>
+
+          <section class="card chart-card" aria-labelledby="chart-title">
+            <div class="card-heading">
+              <div><p class="eyebrow">SINU ELEKTRI LÕPPHIND</p><h2 id="chart-title">Päeva hinnagraafik</h2></div>
+              <span class="tax-badge">Koos käibemaksuga</span>
+            </div>
+            <div class="chart-toolbar">
+              <div class="day-switch" role="group" aria-label="Graafiku päev">
+                <button id="today" type="button" aria-pressed="true">Täna <span id="today-date"></span></button>
+                <button id="tomorrow" type="button" aria-pressed="false">Homme <span id="tomorrow-date"></span></button>
+              </div>
+              <div class="interval-switch" role="group" aria-label="Arvestusperiood">
+                <button type="button" data-interval="15" aria-pressed="true">15 min</button>
+                <button type="button" data-interval="60" aria-pressed="false">1 tund</button>
+              </div>
+              <select id="package-quick" class="quick-package" aria-label="Elektrilevi võrgupakett"></select>
+            </div>
+            <p id="chart-subtitle" class="muted chart-subtitle"></p>
+            <div id="chart-empty" class="empty-state" hidden><span aria-hidden="true">◷</span><h3 id="empty-title"></h3><p id="empty-description"></p></div>
+            <div id="chart-content">
+              <div class="chart-scroll">
+                <div id="chart" tabindex="0" role="group" aria-label="Hinnagraafik. Vali ajavahemik hiirega või vasaku ja parema nooleklahviga."></div>
+              </div>
+              <div class="chart-legend"><span><i class="legend-swatch"></i> Lõpphind</span><span><i class="legend-swatch selected"></i> Valitud ajavahemik</span><span class="chart-hint">Liigu graafikul või kasuta nooleklahve</span></div>
+            </div>
+            <div class="chart-note">Kõik hinnad senti/kWh · Eesti aeg · Kuutasud ei sisaldu hinnas</div>
+          </section>
+
+          <section class="card breakdown-card" aria-labelledby="breakdown-title">
+            <div class="card-heading"><div><p class="eyebrow">LÄBIPAISTEV HIND</p><h2 id="breakdown-title">Millest hind koosneb?</h2></div><span id="selected-time" class="selection-badge">Vali aeg graafikul</span></div>
+            <div id="breakdown" class="breakdown"></div>
+            <div class="breakdown-total"><span>Sinu lõpphind <small>koos kõigi ülaltoodud tasudega</small></span><strong><span id="selected-total">—</span> <small>senti/kWh</small></strong></div>
+          </section>
+          <details class="card table-card"><summary>Vaata hindu tabelina</summary><div class="table-scroll"><table><caption id="table-caption">Valitud päeva hinnad, senti/kWh</caption><thead><tr><th scope="col">Ajavahemik</th><th scope="col">Börsihind km-ta</th><th scope="col">Võrgutasu km-ta</th><th scope="col">Lõpphind km-ga</th></tr></thead><tbody id="price-table"></tbody></table></div></details>
+        </div>
+
+        <aside class="side-column">
+          <section class="card settings-card" aria-labelledby="settings-title">
+            <p class="eyebrow">TÄPSELT SINU HIND</p><h2 id="settings-title">Minu elektripakett</h2>
+            <p class="muted">Vali võrgupakett ja lisa oma elektrimüüja marginaal.</p>
+            <form id="settings-form">
+              <label for="package">Elektrilevi võrgupakett</label>
+              <select id="package" name="package"><option value="VORK1">Võrk 1 · ühetariifne</option><option value="VORK2">Võrk 2 · päev ja öö</option><option value="VORK4">Võrk 4 · päev ja öö</option><option value="VORK5">Võrk 5 · päev, öö ja tipp</option></select>
+              <label for="margin">Elektrimüüja marginaal <span>km-ta</span></label>
+              <div class="input-unit"><input id="margin" name="margin" type="number" min="0" max="1000" step="any" required><span>senti/kWh</span></div>
+              <p class="field-help">Leia marginaal oma elektrilepingust. Vaikimisi 0 — muuda see oma lepingule vastavaks.</p>
+              <details class="fee-settings"><summary>Maksud ja muud tasud</summary>
+                <p class="field-help">2026. aasta kodutarbija tasud. Kõik tasud peale käibemaksu on senti/kWh, ilma käibemaksuta. Vajadusel muudetavad.</p>
+                <label for="renewable">Taastuvenergia tasu</label><input id="renewable" name="renewable" type="number" min="0" max="1000" step="any" required>
+                <label for="excise">Elektriaktsiis</label><input id="excise" name="excise" type="number" min="0" max="1000" step="any" required>
+                <label for="security">Varustuskindluse tasu</label><input id="security" name="security" type="number" min="0" max="1000" step="any" required>
+                <label for="balancing">Tasakaalustamisvõimsuse kulu</label><input id="balancing" name="balancing" type="number" min="0" max="1000" step="any" required>
+                <label for="vat">Käibemaks, %</label><input id="vat" name="vat" type="number" min="0" max="100" step="any" required>
+              </details>
+              <p id="settings-message" class="field-help" role="status">Muudatused rakenduvad kohe ja salvestatakse ainult sinu brauserisse.</p>
+            </form>
+          </section>
+          <section class="info-card">
+            <span class="info-icon" aria-hidden="true">↗</span><h3>Homseks valmis.</h3>
+            <p>Homne graafik ilmub, kui Elering on hinnad avaldanud ja hinnauuendus on lõpule jõudnud.</p>
+            <p>Leht kontrollib uuendatud hinnafaili iga 5 minuti järel. Avaldamise kellaaeg võib varieeruda.</p>
+          </section>
+          <p class="sidebar-note">Ei vaja Shellyt, kontot ega ühendust sinu arvestiga. Graafik näitab tarbimispõhist ühikuhinda, mitte elektriarve prognoosi.</p>
+        </aside>
+      </div>
+    </main>
+    <footer><span>elektrihind. <span class="muted">Lihtsalt selgem pilt.</span></span><span>Hinnad: <a href="https://dashboard.elering.ee/" target="_blank" rel="noreferrer">Elering</a> <span class="divider">/</span> <span id="updated-at">Uuendusaeg laadimisel</span> <button id="refresh" type="button">Värskenda ↻</button></span></footer>
+  </div>
+</body>
+</html>

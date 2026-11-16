@@ -1,0 +1,13 @@
+{
+  "name": "elektrihinna-graafik",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "update-prices": "node scripts/update-prices.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,112 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  DEFAULT_SETTINGS, calculatePrices, dayBounds, dayKey, nextDayKey,
+  networkRate, validateDay, validateSettings, validateSnapshot,
+} from "../site/src/pricing.js";
+import { buildSnapshot } from "../scripts/update-prices.mjs";
+
+function day(key, price = 100) {
+  const { start, end } = dayBounds(key);
+  return Array.from({ length: (end - start) / 900 }, (_, i) => ({ timestamp: start + i * 900, price }));
+}
+const epoch = (iso) => Date.parse(iso) / 1000;
+
+test("Lõpphind sisaldab kõiki tasusid ja käibemaksu täpselt üks kord", () => {
+  const timestamp = epoch("2026-11-16T08:00:00+02:00");
+  const [row] = calculatePrices([{ timestamp, price: 100 }], { ...DEFAULT_SETTINGS, margin: 0.5 });
+  const subtotal = 10 + 6.07 + 0.5 + 0.84 + 0.21 + 0.758 + 0.373;
+  assert.ok(Math.abs(row.total - subtotal * 1.24) < 1e-10);
+  assert.ok(Math.abs(row.vat - subtotal * 0.24) < 1e-10);
+});
+
+test("Negatiivset börsi- ega lõpphinda ei lõigata nulliks", () => {
+  const [row] = calculatePrices([{ timestamp: epoch("2026-11-16T03:00:00+02:00"), price: -200 }], DEFAULT_SETTINGS);
+  assert.equal(row.market, -20);
+  assert.ok(row.total < 0);
+});
+
+test("Elektrilevi päeva-, öö- ja talvised tiputariifid vahetuvad õigel piiril", () => {
+  for (const [time, price] of [
+    ["06:45", 3.03], ["07:00", 5.29], ["08:45", 5.29], ["09:00", 8.18],
+    ["11:45", 8.18], ["12:00", 5.29], ["16:00", 8.18], ["20:00", 5.29], ["22:00", 3.03],
+  ]) assert.equal(networkRate(epoch(`2026-11-16T${time}:00+02:00`), "VORK5"), price, time);
+  assert.equal(networkRate(epoch("2026-11-14T16:00:00+02:00"), "VORK5"), 4.74);
+  assert.equal(networkRate(epoch("2026-11-14T20:00:00+02:00"), "VORK5"), 3.03);
+  assert.equal(networkRate(epoch("2026-07-14T09:00:00+03:00"), "VORK5"), 5.29);
+  assert.equal(networkRate(epoch("2026-07-14T22:00:00+03:00"), "VORK2"), 3.51);
+});
+
+test("Riiklikel pühadel, sh suurel reedel, kehtib puhkepäeva tariif", () => {
+  assert.equal(networkRate(epoch("2026-02-24T10:00:00+02:00"), "VORK2"), 3.51);
+  assert.equal(networkRate(epoch("2026-12-24T17:00:00+02:00"), "VORK5"), 4.74);
+  assert.equal(networkRate(epoch("2026-04-03T10:00:00+03:00"), "VORK2"), 3.51);
+  assert.equal(networkRate(epoch("2026-04-02T10:00:00+03:00"), "VORK2"), 6.07);
+});
+
+test("Kuupäev määratakse Eesti ajavööndis, mitte masina kohalikus ajas", () => {
+  assert.equal(dayKey(new Date("2026-11-15T22:30:00Z")), "2026-11-16");
+  assert.equal(dayKey(new Date("2026-06-15T21:30:00Z")), "2026-06-16");
+  assert.equal(nextDayKey("2026-12-31"), "2027-01-01");
+});
+
+test("Suve- ja talveajale üleminekul on päevas 92 ja 100 veerandtundi", () => {
+  for (const [key, count, hours] of [["2026-03-29", 92, 23], ["2026-10-25", 100, 25], ["2026-11-16", 96, 24]]) {
+    const rows = day(key);
+    assert.equal(rows.length, count);
+    assert.equal(validateDay(rows, key), rows);
+    const prices = calculatePrices(rows, { ...DEFAULT_SETTINGS, interval: "60" });
+    assert.equal(prices.length, hours);
+    assert.equal(new Set(prices.map((row) => row.timestamp)).size, hours);
+    assert.ok(prices.every((row) => dayKey(new Date(row.timestamp * 1000)) === key));
+  }
+});
+
+test("Tunni lõpphind on nelja veerandtunni hindade keskmine", () => {
+  const start = epoch("2026-11-16T08:00:00+02:00");
+  const rows = [10, 20, -30, 80].map((price, i) => ({ timestamp: start + i * 900, price }));
+  const quarters = calculatePrices(rows, DEFAULT_SETTINGS);
+  const [hour] = calculatePrices(rows, { ...DEFAULT_SETTINGS, interval: "60" });
+  assert.equal(hour.market, 2);
+  assert.ok(Math.abs(hour.total - quarters.reduce((sum, row) => sum + row.total, 0) / 4) < 1e-10);
+  assert.throws(() => calculatePrices(rows.slice(1), { ...DEFAULT_SETTINGS, interval: "60" }), /neli veerandtundi/);
+});
+
+test("Puuduv, korduv, nihutatud või vigane hinnapunkt lükatakse tagasi", () => {
+  const rows = day("2026-11-16");
+  assert.throws(() => validateDay(rows.slice(1), "2026-11-16"), /puudulikud/);
+  assert.throws(() => validateDay([...rows.slice(0, -1), rows[0]], "2026-11-16"), /puudulikud/);
+  assert.throws(() => validateDay(rows.map((row, i) => i === 1 ? { ...row, timestamp: row.timestamp + 1 } : row), "2026-11-16"), /puudulikud/);
+  assert.throws(() => validateDay(rows.map((row, i) => i === 1 ? { ...row, price: null } : row), "2026-11-16"), /puudulikud/);
+  assert.throws(() => dayBounds("2026-02-30"), /kuupäev/);
+});
+
+test("Vigaseid seadeid ja hinnafaile ei kasutata", () => {
+  for (const settings of [null, { ...DEFAULT_SETTINGS, package: "toString" },
+    { ...DEFAULT_SETTINGS, margin: "" }, { ...DEFAULT_SETTINGS, vat: 101 }, { ...DEFAULT_SETTINGS, interval: "30" }]) {
+    assert.throws(() => validateSettings(settings), /Kontrolli seadeid/);
+  }
+  assert.throws(() => validateSnapshot({ schemaVersion: 1, updatedAt: "invalid", days: {} }), /vorming/);
+  assert.throws(() => validateSnapshot({ schemaVersion: 1, updatedAt: new Date().toISOString(), days: {} }), /vorming/);
+});
+
+test("Hinnauuendus lubab avaldamata homset, mitte poolikut tänast ega homset", () => {
+  const now = new Date("2026-11-16T10:00:00Z");
+  const today = day("2026-11-16"), tomorrow = day("2026-11-17");
+  const response = (rows) => ({ success: true, data: { ee: rows } });
+  const snapshot = buildSnapshot(response(today), now);
+  assert.deepEqual(Object.keys(snapshot.days), ["2026-11-16"]);
+  assert.equal(validateSnapshot(snapshot), snapshot);
+  assert.throws(() => buildSnapshot(response(today.slice(1)), now), /puudulikud/);
+  assert.throws(() => buildSnapshot(response([...today, tomorrow[0]]), now), /puudulikud/);
+  assert.throws(() => buildSnapshot({ success: false }, now), /Eesti hindu/);
+});
+
+test("Hinnauuendus järjestab andmed ja ei kaasa järgmise päeva lõpuhetke", () => {
+  const today = day("2026-11-16"), tomorrow = day("2026-11-17");
+  const extra = { timestamp: dayBounds("2026-11-18").start, price: 999 };
+  const snapshot = buildSnapshot({ success: true, data: { ee: [...today, ...tomorrow, extra].reverse() } },
+    new Date("2026-11-16T15:00:00Z"));
+  assert.deepEqual(snapshot.days["2026-11-16"], today);
+  assert.deepEqual(snapshot.days["2026-11-17"], tomorrow);
+});
