@@ -2,6 +2,8 @@
 
 Staatiline eestikeelne veebileht tänase ja homse elektri lõpphinna vaatamiseks.
 
+Veebileht on saadaval aadressil [hind.ekstreem.ee](https://hind.ekstreem.ee).
+
 ## Omadused
 
 - Eleringi Eesti piirkonna 15 minuti börsihinnad; soovi korral tunni keskmised.
