@@ -5,10 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: "15 14 * * *"
-      timezone: "Europe/Tallinn"
-    - cron: "0 15 * * *"
-      timezone: "Europe/Tallinn"
+    - cron: '13 14 * * *'
+      timezone: Europe/Tallinn
+    - cron: '17 15 * * *'
+      timezone: Europe/Tallinn
 
 permissions:
   contents: read
