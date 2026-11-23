@@ -5,6 +5,7 @@ import {
 
 const $ = (id) => document.getElementById(id);
 const number = new Intl.NumberFormat("et-EE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const wholeNumber = new Intl.NumberFormat("et-EE", { maximumFractionDigits: 0 });
 const precise = new Intl.NumberFormat("et-EE", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 const time = new Intl.DateTimeFormat("et-EE", { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 const date = new Intl.DateTimeFormat("et-EE", { timeZone: TIME_ZONE, day: "numeric", month: "short" });
@@ -155,7 +156,7 @@ function selectRow(index) {
     $("selected-total").textContent = number.format(row.total);
   }
   $("chart-selected-start").textContent = row ? time.format(new Date(row.timestamp * 1000)) : "—";
-  $("chart-selected-price").textContent = $("selected-total").textContent;
+  $("chart-selected-price").textContent = row ? wholeNumber.format(row.total) : "—";
   $("chart-selected-price").title = $("selected-time").textContent;
   graphBars.forEach((bar, i) => bar.classList.toggle("active", i === index));
   const fragment = document.createDocumentFragment();

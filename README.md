@@ -14,7 +14,7 @@ Staatiline eestikeelne veebileht tänase ja homse elektri lõpphinna vaatamiseks
 - Kompaktne paigutus veebis ja mobiilis: graafik koos valitud hinnaga lehe ülaosas,
   hinnakomponendid kohe selle all ning hinnaülevaate kaardid lehe allosas.
 - Graafikul on esile tõstetud ainult üks valitud tulp; päises on selle perioodi
-  alguskellaaeg ja lõpphind sama suure kirjaga kujul `14:00 - 43,00 s/kWh`.
+  alguskellaaeg ja täisarvuni ümardatud lõpphind sama suure kirjaga kujul `14:00 - 43 s/kWh`.
 - Tegelikud hinnad, mitte demoandmed. Puuduvate hindade korral on graafikul tühi
   olek; laadimisvea jaoks on eraldi teade.
 
