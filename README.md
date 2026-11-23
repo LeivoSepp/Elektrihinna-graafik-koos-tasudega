@@ -11,6 +11,8 @@ Staatiline eestikeelne veebileht tänase ja homse elektri lõpphinna vaatamiseks
   varustuskindluse tasu + tasakaalustamisvõimsuse kulu + käibemaks.
 - **Kuutasud ja muud tarbimismahust sõltumatud tasud on välja jäetud.**
 - Seaded brauseri localStorage'is, klaviatuuriga kasutatav graafik ja hinnatabel.
+- Kompaktne paigutus veebis ja mobiilis: graafik koos valitud hinnaga lehe ülaosas,
+  hinnakomponendid kohe selle all ning hinnaülevaate kaardid lehe allosas.
 - Tegelikud hinnad, mitte demoandmed. Puuduvate hindade korral on graafikul tühi
   olek; laadimisvea jaoks on eraldi teade.
 

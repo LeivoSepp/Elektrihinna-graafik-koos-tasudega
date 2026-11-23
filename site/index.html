@@ -30,21 +30,13 @@
 
       <div class="dashboard">
         <div class="main-column">
-          <section class="stats" aria-label="Hindade ülevaade">
-            <article class="stat current">
-              <span class="stat-label"><span class="status-dot"></span> PRAEGU</span>
-              <strong id="current-price">—</strong><span class="unit">senti/kWh</span>
-              <span id="current-time" class="stat-foot">Kõik tarbimispõhised tasud</span>
-            </article>
-            <article class="stat"><span id="average-label" class="stat-label">PÄEVA KESKMINE</span><strong id="average-price">—</strong><span class="unit">senti/kWh</span><span class="stat-foot">Kuvatud perioodide ajakeskmine</span></article>
-            <article class="stat"><span class="stat-label">KÕIGE SOODSAM</span><strong id="min-price">—</strong><span class="unit">senti/kWh</span><span id="min-time" class="stat-foot">—</span></article>
-            <article class="stat"><span class="stat-label">KÕIGE KALLIM</span><strong id="max-price">—</strong><span class="unit">senti/kWh</span><span id="max-time" class="stat-foot">—</span></article>
-          </section>
-
           <section class="card chart-card" aria-labelledby="chart-title">
             <div class="card-heading">
               <div><p class="eyebrow">SINU ELEKTRI LÕPPHIND</p><h2 id="chart-title">Päeva hinnagraafik</h2></div>
-              <span class="tax-badge">Koos käibemaksuga</span>
+              <div class="chart-selection" aria-label="Graafikul valitud lõpphind koos käibemaksuga" aria-describedby="selected-time">
+                <span>Valitud hind · km-ga</span>
+                <strong><span id="chart-selected-price">—</span> <small>senti/kWh</small></strong>
+              </div>
             </div>
             <div class="chart-toolbar">
               <div class="day-switch" role="group" aria-label="Graafiku päev">
@@ -55,7 +47,6 @@
                 <button type="button" data-interval="15" aria-pressed="true">15 min</button>
                 <button type="button" data-interval="60" aria-pressed="false">1 tund</button>
               </div>
-              <select id="package-quick" class="quick-package" aria-label="Elektrilevi võrgupakett"></select>
             </div>
             <p id="chart-subtitle" class="muted chart-subtitle"></p>
             <div id="chart-empty" class="empty-state" hidden><span aria-hidden="true">◷</span><h3 id="empty-title"></h3><p id="empty-description"></p></div>
@@ -65,6 +56,7 @@
               </div>
               <div class="chart-legend"><span><i class="legend-swatch"></i> Lõpphind</span><span><i class="legend-swatch selected"></i> Valitud ajavahemik</span><span class="chart-hint">Liigu graafikul või kasuta nooleklahve</span></div>
             </div>
+            <select id="package-quick" class="quick-package" aria-label="Elektrilevi võrgupakett"></select>
             <div class="chart-note">Kõik hinnad senti/kWh · Eesti aeg · Kuutasud ei sisaldu hinnas</div>
           </section>
 
@@ -105,6 +97,16 @@
           <p class="sidebar-note">Ei vaja Shellyt, kontot ega ühendust sinu arvestiga. Graafik näitab tarbimispõhist ühikuhinda, mitte elektriarve prognoosi.</p>
         </aside>
       </div>
+      <section class="stats" aria-label="Hindade ülevaade">
+        <article class="stat current">
+          <span class="stat-label"><span class="status-dot"></span> PRAEGU</span>
+          <strong id="current-price">—</strong><span class="unit">senti/kWh</span>
+          <span id="current-time" class="stat-foot">Kõik tarbimispõhised tasud</span>
+        </article>
+        <article class="stat"><span id="average-label" class="stat-label">PÄEVA KESKMINE</span><strong id="average-price">—</strong><span class="unit">senti/kWh</span><span class="stat-foot">Kuvatud perioodide ajakeskmine</span></article>
+        <article class="stat"><span class="stat-label">KÕIGE SOODSAM</span><strong id="min-price">—</strong><span class="unit">senti/kWh</span><span id="min-time" class="stat-foot">—</span></article>
+        <article class="stat"><span class="stat-label">KÕIGE KALLIM</span><strong id="max-price">—</strong><span class="unit">senti/kWh</span><span id="max-time" class="stat-foot">—</span></article>
+      </section>
     </main>
     <footer><span>elektrihind. <span class="muted">Lihtsalt selgem pilt.</span></span><span>Hinnad: <a href="https://dashboard.elering.ee/" target="_blank" rel="noreferrer">Elering</a> <span class="divider">/</span> <span id="updated-at">Uuendusaeg laadimisel</span> <button id="refresh" type="button">Värskenda ↻</button></span></footer>
   </div>

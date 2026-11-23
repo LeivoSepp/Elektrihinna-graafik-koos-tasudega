@@ -153,6 +153,8 @@ function selectRow(index) {
     $("selected-time").textContent = `${date.format(new Date(row.timestamp * 1000))} · ${intervalLabel(row)}`;
     $("selected-total").textContent = number.format(row.total);
   }
+  $("chart-selected-price").textContent = $("selected-total").textContent;
+  $("chart-selected-price").title = $("selected-time").textContent;
   graphBars.forEach((bar, i) => bar.classList.toggle("active", i === index));
   const fragment = document.createDocumentFragment();
   for (const [key, label] of COMPONENTS) {
