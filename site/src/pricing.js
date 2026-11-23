@@ -63,9 +63,12 @@ export function dayBounds(key) {
   return { start: midnight(key), end: midnight(nextDayKey(key)) };
 }
 
-export function validateDay(rows, key) {
+export function validateDay(rows, key, { allowPartial = false } = {}) {
   const { start, end } = dayBounds(key);
-  if (!Array.isArray(rows) || rows.length !== (end - start) / 900 ||
+  const expected = (end - start) / 900;
+  if (!Array.isArray(rows) || (allowPartial
+    ? rows.length === 0 || rows.length > expected
+    : rows.length !== expected) ||
       rows.some((row, i) => row === null || typeof row !== "object" ||
         row.timestamp !== start + i * 900 || !Number.isFinite(row.price))) {
     throw new Error(`${key}: puudulikud või vigased 15 minuti hinnad.`);
@@ -79,7 +82,10 @@ export function validateSnapshot(data) {
       Object.keys(data.days).length === 0) {
     throw new Error("Hinnafaili vorming on vigane.");
   }
-  for (const [key, rows] of Object.entries(data.days)) validateDay(rows, key);
+  const tomorrow = nextDayKey(dayKey(new Date(data.updatedAt)));
+  for (const [key, rows] of Object.entries(data.days)) {
+    validateDay(rows, key, { allowPartial: key === tomorrow });
+  }
   return data;
 }
 

@@ -1,6 +1,6 @@
 import {
   TIME_ZONE, TARIFF_YEAR, PACKAGES, DEFAULT_SETTINGS, COMPONENTS,
-  dayKey, nextDayKey, calculatePrices, validateSettings, validateSnapshot,
+  dayKey, dayBounds, nextDayKey, calculatePrices, validateSettings, validateSnapshot,
 } from "./pricing.js";
 
 const $ = (id) => document.getElementById(id);
@@ -102,7 +102,10 @@ function renderChart() {
   const high = Math.max(100, Math.ceil(Math.max(...values) / step) * step);
   const y = (value) => top + (high - value) / (high - low) * (height - top - bottom);
   const plotWidth = width - left - right;
-  const slot = plotWidth / rows.length;
+  const { start, end } = dayBounds(dayKey(new Date(rows[0].timestamp * 1000)));
+  const duration = rows[0].duration;
+  const slots = (end - start) / duration;
+  const slot = plotWidth / slots;
   const gap = slot > 6 ? 1.6 : 0.6;
   chartLayout = { left, slot };
   const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, "aria-hidden": "true" });
@@ -123,8 +126,8 @@ function renderChart() {
     svg.append(bar);
     return bar;
   });
-  for (let i = 0; i < rows.length; i++) {
-    const label = time.format(new Date(rows[i].timestamp * 1000));
+  for (let i = 0; i < slots; i++) {
+    const label = time.format(new Date((start + i * duration) * 1000));
     if (label.endsWith(":00") && Number(label.slice(0, 2)) % 3 === 0) {
       svg.append(svgElement("text", { x: left + i * slot, y: height - 8, class: "axis-label" }, label));
     }
@@ -189,6 +192,12 @@ function renderTable() {
   $("price-table").replaceChildren(fragment);
 }
 
+function pricesForDay(key) {
+  const source = snapshot?.days[key] || [];
+  const completeHours = source.slice(0, source.length - source.length % 4);
+  return calculatePrices(settings.interval === "60" ? completeHours : source, settings);
+}
+
 function render() {
   const now = new Date();
   const today = dayKey(now), tomorrow = nextDayKey(today);
@@ -203,22 +212,20 @@ function render() {
   const tariffExpired = Number(key.slice(0, 4)) !== TARIFF_YEAR;
   $("tariff-warning").hidden = !tariffExpired;
   $("tariff-warning").textContent = `Vaikimisi tasud pärinevad ${TARIFF_YEAR}. aastast. ${key.slice(0, 4)}. aasta hindade jaoks kontrolli makse ja võrgutariife.`;
-  const stale = snapshot && now - new Date(snapshot.updatedAt) > 2 * 3600000;
-  const missingToday = snapshot && !snapshot.days[today];
-  const message = loadError || (missingToday ? "Hinnafailis puuduvad tänased hinnad. Viimane uuendus on aegunud." :
-    stale ? "Hinnafaili viimasest uuendusest on üle kahe tunni. Kuvatud hinnad on valitud kuupäeva kohta, kuid homsete hindade avaldamine võib viibida." : "");
-  $("data-message").hidden = !message && !!snapshot;
-  $("data-message").textContent = message || "Laen Eleringi hindu…";
-  $("data-message").classList.toggle("error", !!loadError || !!missingToday);
-  $("data-message").classList.toggle("warning", !!stale && !loadError && !missingToday);
+  $("data-message").hidden = !loadError && !!snapshot;
+  $("data-message").textContent = loadError || "Laen Eleringi hindu…";
+  $("data-message").classList.toggle("error", !!loadError);
   $("updated-at").textContent = snapshot ? `Uuendatud ${stamp.format(new Date(snapshot.updatedAt))}` : "Uuendusaeg puudub";
-  rows = snapshot?.days[key] ? calculatePrices(snapshot.days[key], settings) : [];
-  const todayPrices = snapshot?.days[today] ? calculatePrices(snapshot.days[today], settings) : [];
+  rows = pricesForDay(key);
+  const todayPrices = pricesForDay(today);
+  const { start, end } = dayBounds(key);
+  const partial = rows.length > 0 && rows.length * rows[0].duration < end - start;
+  $("average-label").textContent = partial ? "OLEMASOLEVATE HINDADE KESKMINE" : "PÄEVA KESKMINE";
   const current = todayPrices.find((row) => now / 1000 >= row.timestamp && now / 1000 < row.timestamp + row.duration);
   $("current-price").textContent = current ? number.format(current.total) : "—";
   $("current-time").textContent = current ? intervalLabel(current) : "Hetkehind pole saadaval";
   $("chart-title").textContent = selectedOffset === 0 ? "Tänane hinnagraafik" : "Homne hinnagraafik";
-  $("chart-subtitle").textContent = `Elektrilevi ${PACKAGES[settings.package].name} · ${settings.interval === "15" ? "15 minuti" : "Tunni keskmised"} hinnad · senti/kWh`;
+  $("chart-subtitle").textContent = `Elektrilevi ${PACKAGES[settings.package].name} · ${settings.interval === "15" ? "15 minuti" : "Tunni keskmised"} hinnad · senti/kWh${partial ? " · Osaline päev" : ""}`;
   $("package-quick").value = settings.package;
   $("package").value = settings.package;
   $("chart-empty").hidden = rows.length > 0;
@@ -227,6 +234,10 @@ function render() {
   $("empty-description").textContent = selectedOffset ?
     "Kui hinnad on Eleringist alla laaditud ja avaldatud, ilmub graafik siia automaatselt." :
     "Kontrolli internetiühendust ja hinnafaili viimast uuendusaega. Proovi lehte värskendada.";
+  if (settings.interval === "60" && snapshot?.days[key]?.length > 0 && rows.length === 0) {
+    $("empty-title").textContent = "Täieliku tunni hinnad pole veel saadaval";
+    $("empty-description").textContent = "Tunni kuvamiseks on vaja kõiki nelja veerandtundi. Olemasolevaid hindu näed 15 minuti vaates.";
+  }
   if (rows.length) {
     const min = rows.reduce((a, b) => a.total <= b.total ? a : b);
     const max = rows.reduce((a, b) => a.total >= b.total ? a : b);

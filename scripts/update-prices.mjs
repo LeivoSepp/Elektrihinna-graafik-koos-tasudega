@@ -16,7 +16,7 @@ export function buildSnapshot(response, now = new Date()) {
       .map(({ timestamp, price }) => ({ timestamp, price }))
       .sort((a, b) => a.timestamp - b.timestamp);
     if (key === tomorrow && rows.length === 0) continue;
-    days[key] = validateDay(rows, key);
+    days[key] = validateDay(rows, key, { allowPartial: key === tomorrow });
   }
   return { schemaVersion: 1, updatedAt: now.toISOString(), days };
 }

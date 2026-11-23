@@ -90,7 +90,7 @@ test("Vigaseid seadeid ja hinnafaile ei kasutata", () => {
   assert.throws(() => validateSnapshot({ schemaVersion: 1, updatedAt: new Date().toISOString(), days: {} }), /vorming/);
 });
 
-test("Hinnauuendus lubab avaldamata homset, mitte poolikut tänast ega homset", () => {
+test("Hinnauuendus lubab avaldamata homset, mitte poolikut tänast", () => {
   const now = new Date("2026-11-16T10:00:00Z");
   const today = day("2026-11-16"), tomorrow = day("2026-11-17");
   const response = (rows) => ({ success: true, data: { ee: rows } });
@@ -98,8 +98,64 @@ test("Hinnauuendus lubab avaldamata homset, mitte poolikut tänast ega homset", 
   assert.deepEqual(Object.keys(snapshot.days), ["2026-11-16"]);
   assert.equal(validateSnapshot(snapshot), snapshot);
   assert.throws(() => buildSnapshot(response(today.slice(1)), now), /puudulikud/);
-  assert.throws(() => buildSnapshot(response([...today, tomorrow[0]]), now), /puudulikud/);
   assert.throws(() => buildSnapshot({ success: false }, now), /Eesti hindu/);
+});
+
+test("Homse olemasolevad veerandtunnid avaldatakse ka kellakeeramise päevadel", () => {
+  for (const [todayKey, tomorrowKey] of [
+    ["2026-11-23", "2026-11-24"],
+    ["2026-03-28", "2026-03-29"],
+    ["2026-10-24", "2026-10-25"],
+  ]) {
+    const today = day(todayKey), tomorrow = day(tomorrowKey);
+    const now = new Date(`${todayKey}T10:00:00Z`);
+    for (const count of [1, 4, tomorrow.length - 1]) {
+      const snapshot = buildSnapshot({
+        success: true, data: { ee: [...today, ...tomorrow.slice(0, count)] },
+      }, now);
+      assert.deepEqual(snapshot.days, { [todayKey]: today, [tomorrowKey]: tomorrow.slice(0, count) });
+      assert.equal(validateSnapshot(snapshot), snapshot);
+      assert.equal(validateSnapshot(JSON.parse(JSON.stringify(snapshot))).days[tomorrowKey].length, count);
+    }
+  }
+});
+
+test("Poolik homne peab algama keskööst ning sisaldama järjestikuseid vigadeta hindu", () => {
+  const today = day("2026-11-23"), tomorrow = day("2026-11-24").slice(0, 4);
+  const now = new Date("2026-11-23T10:00:00Z");
+  for (const invalid of [
+    tomorrow.slice(1),
+    [tomorrow[0], tomorrow[0], ...tomorrow.slice(2)],
+    tomorrow.map((row, i) => i === 1 ? { ...row, price: null } : row),
+  ]) {
+    assert.throws(() => buildSnapshot({
+      success: true, data: { ee: [...today, ...invalid] },
+    }, now), /2026-11-24: puudulikud/);
+    assert.throws(() => validateSnapshot({
+      schemaVersion: 1, updatedAt: now.toISOString(),
+      days: { "2026-11-23": today, "2026-11-24": invalid },
+    }), /2026-11-24: puudulikud/);
+  }
+  assert.throws(() => validateSnapshot({
+    schemaVersion: 1, updatedAt: now.toISOString(),
+    days: { "2026-11-23": today.slice(0, 4) },
+  }), /2026-11-23: puudulikud/);
+  assert.throws(() => validateSnapshot({
+    schemaVersion: 1, updatedAt: now.toISOString(),
+    days: { "2026-11-24": [] },
+  }), /2026-11-24: puudulikud/);
+  const snapshot = buildSnapshot({ success: true, data: { ee: [...today, ...tomorrow] } }, now);
+  const hours = calculatePrices(snapshot.days["2026-11-24"], { ...DEFAULT_SETTINGS, interval: "60" });
+  assert.equal(hours.length, 1);
+  assert.equal(hours[0].timestamp, tomorrow[0].timestamp);
+});
+
+test("Täieliku punktide arvuga vigased homsed hinnad katkestavad uuenduse", () => {
+  const today = day("2026-11-23"), tomorrow = day("2026-11-24");
+  tomorrow[0].price = null;
+  assert.throws(() => buildSnapshot({
+    success: true, data: { ee: [...today, ...tomorrow] },
+  }, new Date("2026-11-23T10:00:00Z")), /2026-11-24: puudulikud/);
 });
 
 test("Hinnauuendus järjestab andmed ja ei kaasa järgmise päeva lõpuhetke", () => {

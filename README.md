@@ -11,8 +11,8 @@ Staatiline eestikeelne veebileht tänase ja homse elektri lõpphinna vaatamiseks
   varustuskindluse tasu + tasakaalustamisvõimsuse kulu + käibemaks.
 - **Kuutasud ja muud tarbimismahust sõltumatud tasud on välja jäetud.**
 - Seaded brauseri localStorage'is, klaviatuuriga kasutatav graafik ja hinnatabel.
-- Tegelikud hinnad, mitte demoandmed. Avaldamata homsete hindade, laadimisvea ja
-  aegunud hinnafaili jaoks on eraldi teated.
+- Tegelikud hinnad, mitte demoandmed. Puuduvate hindade korral on graafikul tühi
+  olek; laadimisvea jaoks on eraldi teade.
 
 ## Kohalik käivitamine
 
@@ -54,24 +54,33 @@ ega muud taustateenust ei kasutata.
 4. Käivita GitHubi **Actions → Update prices and publish → Run workflow**.
    Töövoog käivitab testid, laadib hinnad, koostab `dist`-kausta ja avaldab selle Azure'is.
 
-Töövoog käivitub ka `main`-haru muudatustel ning ajastatult:
+Töövoog käivitub automaatselt kaks korda päevas Eesti aja järgi:
 
-- UTC 10–16 iga 15 minuti järel, minutil 7, 22, 37 ja 52;
-- muul ajal kord tunnis, minutil 7.
+- kell 14:15;
+- kell 15:00.
 
-UTC 10–16 tähendab Eestis talvel 12–18 ja suvel 13–19.
-Graafikud kasutavad alati Eesti aega. Homseid hindu näidatakse alles siis,
-kui saadaval on kogu homne päev; kindlat avaldamiskellaaega ei eeldata.
+Ajastus kasutab `Europe/Tallinn` ajavööndit ning arvestab suve- ja talveajaga.
+Muudatuste saatmine `main`-harusse töövoogu ei käivita; käsitsi saab selle käivitada
+Actionsi lehel nupuga **Run workflow**.
+Graafikud kasutavad alati Eesti aega. Homsel graafikul kuvatakse ka ainult
+osaliselt avaldatud hinnad, alustades homsest keskööst; kindlat avaldamiskellaaega ei eeldata.
 GitHub Actionsi ajastused võivad hilineda. Ajastatud töövoog peab olema
 vaikimisi harus ning avalikus repositooriumis võib GitHub selle pika
 tegevusetuse järel peatada. Vajadusel lülita see Actionsi lehel uuesti sisse.
-Pärast keskööd võib järgmise eduka avaldamiseni tekkida lühike homsete
-hindade puudumise periood.
+Pärast keskööd puuduvad uue homse päeva hinnad järgmise eduka avaldamiseni.
+Kui mõlemal käivitusel jäävad homsed hinnad saamata, puuduvad pärast keskööd
+ka tänased hinnad kuni järgmise eduka uuenduseni.
 
-Uuendus ebaõnnestub, kui tänane päev on puudulik, homne päev on ainult osaliselt
-saadaval või API tagastab vea. Sel juhul ei alustata uut avaldamist ning eelmine
-veebileht jääb alles. Brauser näitab üle kahe tunni vanuse hinnafaili kohta hoiatust
-ega kuva eilseid hindu tänaste pähe.
+Kui homne päev on ainult osaliselt saadaval, lisatakse olemasolevad veerandtunnid
+hinnafaili. Osaline päev peab algama keskööst ja hinnapunktides ei tohi olla lünki.
+Graafiku ajatelg hõlmab alati kogu päeva; avaldamata tundide ala jääb tühjaks.
+Kellakeeramise päevadel arvestab ajatelg päeva tegeliku 23- või 25-tunnise pikkusega.
+Järgmised uuendused proovivad homseid hindu uuesti.
+Uuendus ebaõnnestub, kui tänane päev on puudulik, päev sisaldab vigaseid hindu
+või ajatempleid või API tagastab vea. Sel juhul ei alustata uut avaldamist ning eelmine
+veebileht jääb alles. Hinnafaili vanuse ega tänaste hindade puudumise kohta eraldi
+hoiatust ei kuvata. Puuduvate hindade korral on graafik tühi; eilseid hindu ei
+kuvata tänaste pähe. Laadimisvea teade jääb alles.
 
 ## Tasud ja arvutus
 
@@ -83,7 +92,9 @@ Vaikimisi on valitud Võrk 2 ning müüja marginaal **0** — sisesta oma leping
 marginaal ilma käibemaksuta. Tasakaalustamisvõimsuse kulu on eraldi komponent:
 kontrolli, et sa ei lisaks seda marginaali sisestamisel teist korda.
 Päeva keskmine on võrdse pikkusega perioodide ajakeskmine, mitte sinu tarbimisega
-kaalutud hind. Tunnirežiimis keskmistatakse neli veerandtunni lõpphinda.
+kaalutud hind. Osalise päeva puhul arvutatakse keskmine ainult kuvatud perioodidest
+ning graafiku juures on märge „Osaline päev”.
+Tunnirežiimis keskmistatakse neli veerandtunni lõpphinda; pooleliolevat tundi ei kuvata.
 
 Algsed tasud on 2026. aasta kodutarbija määrad:
 
