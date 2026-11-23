@@ -54,14 +54,14 @@ ega muud taustateenust ei kasutata.
 4. Käivita GitHubi **Actions → Update prices and publish → Run workflow**.
    Töövoog käivitab testid, laadib hinnad, koostab `dist`-kausta ja avaldab selle Azure'is.
 
-Töövoog käivitub automaatselt kaks korda päevas Eesti aja järgi:
+Töövoog käivitub ajastatult kaks korda päevas Eesti aja järgi:
 
 - kell 14:15;
 - kell 15:00.
 
 Ajastus kasutab `Europe/Tallinn` ajavööndit ning arvestab suve- ja talveajaga.
-Muudatuste saatmine `main`-harusse töövoogu ei käivita; käsitsi saab selle käivitada
-Actionsi lehel nupuga **Run workflow**.
+Lisaks käivitub töövoog automaatselt muudatuste saatmisel `main`-harusse, et uus
+kood jõuaks veebi. Käsitsi saab selle käivitada Actionsi lehel nupuga **Run workflow**.
 Graafikud kasutavad alati Eesti aega. Homsel graafikul kuvatakse ka ainult
 osaliselt avaldatud hinnad, alustades homsest keskööst; kindlat avaldamiskellaaega ei eeldata.
 GitHub Actionsi ajastused võivad hilineda. Ajastatud töövoog peab olema
