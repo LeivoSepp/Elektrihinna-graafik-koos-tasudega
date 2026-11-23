@@ -138,7 +138,8 @@ function renderChart() {
 function selectAt(clientX) {
   const svg = $("chart").firstElementChild;
   if (!svg || !rows.length) return;
-  const x = clientX - svg.getBoundingClientRect().left - chartLayout.left;
+  const bounds = svg.getBoundingClientRect();
+  const x = (clientX - bounds.left) * svg.viewBox.baseVal.width / bounds.width - chartLayout.left;
   const index = Math.floor(x / chartLayout.slot);
   if (index >= 0 && index < rows.length) selectRow(index);
 }
@@ -153,6 +154,7 @@ function selectRow(index) {
     $("selected-time").textContent = `${date.format(new Date(row.timestamp * 1000))} · ${intervalLabel(row)}`;
     $("selected-total").textContent = number.format(row.total);
   }
+  $("chart-selected-start").textContent = row ? time.format(new Date(row.timestamp * 1000)) : "—";
   $("chart-selected-price").textContent = $("selected-total").textContent;
   $("chart-selected-price").title = $("selected-time").textContent;
   graphBars.forEach((bar, i) => bar.classList.toggle("active", i === index));
