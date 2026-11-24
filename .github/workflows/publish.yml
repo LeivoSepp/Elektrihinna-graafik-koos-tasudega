@@ -4,11 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  schedule:
-    - cron: '13 14 * * *'
-      timezone: Europe/Tallinn
-    - cron: '17 15 * * *'
-      timezone: Europe/Tallinn
 
 permissions:
   contents: read

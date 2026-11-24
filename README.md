@@ -48,8 +48,8 @@ Testid ei vaja võrguühendust.
 ## Azure Static Web Apps ja GitHub Actions
 
 Eleringi API CORS-piirangu vältimiseks laadib hindu **GitHub Actions**, mitte brauser.
-Hinnafail ja veebileht avaldatakse koos samale domeenile. Ühtegi Azure Functionit
-ega muud taustateenust ei kasutata.
+Hinnafail ja veebileht avaldatakse koos samale domeenile. Azure Automation käivitab
+ajastatud uuendused; hinnalaadimine ja avaldamine toimuvad GitHub Actionsis.
 
 1. Paigalda see projekt GitHubi repositooriumi juurkausta, vaikimisi harusse `main`.
 2. Loo Azure'is **Static Web App**. Vali käsitsi hallatav avaldamine / `Other`, sest
@@ -60,12 +60,17 @@ ega muud taustateenust ei kasutata.
 4. Käivita GitHubi **Actions → Update prices and publish → Run workflow**.
    Töövoog käivitab testid, laadib hinnad, koostab `dist`-kausta ja avaldab selle Azure'is.
 
-Töövoog käivitub ajastatult kaks korda päevas Eesti aja järgi:
+Azure Automationi runbook käivitab töövoo `workflow_dispatch` kaudu kaks korda
+päevas Eesti aja järgi:
 
-- kell 14:15;
-- kell 15:00.
+- kell 14:13;
+- kell 15:17.
 
-Ajastus kasutab `Europe/Tallinn` ajavööndit ning arvestab suve- ja talveajaga.
+Ajastused seadistatakse Azure Automationis Tallinna ajavööndiga ning need arvestavad
+suve- ja talveajaga. GitHubi töövoos `schedule`-käivitust ei ole.
+Runbook peab olema avaldatud ning mõlemad ajastused sellega seotud ja aktiivsed.
+GitHubi tokenit hoitakse Automationi krüpteeritud muutujas `GitHubActionsToken`;
+token peab lubama selle repositooriumi Actionsi kirjutamisõigust ning olema kehtiv.
 Lisaks käivitub töövoog automaatselt muudatuste saatmisel `main`-harusse, et uus
 kood jõuaks veebi. Käsitsi saab selle käivitada Actionsi lehel nupuga **Run workflow**.
 Graafikud kasutavad alati Eesti aega. Homsel graafikul kuvatakse ka ainult
@@ -73,9 +78,8 @@ osaliselt avaldatud hinnad, alustades homsest keskööst; kindlat avaldamiskella
 Iga hinnauuendus küsib tänase, homse ja ülehomse päeva hindu ning salvestab ka
 ülehomse olemasolevad veerandtunnid. Pärast keskööd kuvatakse need homsel graafikul
 ilma uue allalaadimiseta.
-GitHub Actionsi ajastused võivad hilineda. Ajastatud töövoog peab olema
-vaikimisi harus ning avalikus repositooriumis võib GitHub selle pika
-tegevusetuse järel peatada. Vajadusel lülita see Actionsi lehel uuesti sisse.
+Azure'i runbook'i edukas lõpetamine kinnitab ainult GitHubi käivitamistaotluse
+vastuvõtmist. Hinnauuenduse ja avaldamise tulemust tuleb kontrollida GitHub Actionsis.
 Kui ülehomseid hindu uuenduse ajal veel polnud, puuduvad pärast keskööd uue homse
 päeva hinnad järgmise eduka avaldamiseni.
 Kui mõlemal käivitusel jäävad homsed hinnad saamata, puuduvad pärast keskööd
