@@ -8,15 +8,16 @@ export function buildSnapshot(response, now = new Date()) {
   }
   const today = dayKey(now);
   const tomorrow = nextDayKey(today);
+  const dayAfterTomorrow = nextDayKey(tomorrow);
   const days = {};
-  for (const key of [today, tomorrow]) {
+  for (const key of [today, tomorrow, dayAfterTomorrow]) {
     const { start, end } = dayBounds(key);
     const rows = response.data.ee.filter((row) =>
       Number.isFinite(row?.timestamp) && row.timestamp >= start && row.timestamp < end)
       .map(({ timestamp, price }) => ({ timestamp, price }))
       .sort((a, b) => a.timestamp - b.timestamp);
-    if (key === tomorrow && rows.length === 0) continue;
-    days[key] = validateDay(rows, key, { allowPartial: key === tomorrow });
+    if (key !== today && rows.length === 0) continue;
+    days[key] = validateDay(rows, key, { allowPartial: key !== today });
   }
   return { schemaVersion: 1, updatedAt: now.toISOString(), days };
 }
@@ -25,7 +26,7 @@ async function main() {
   const now = new Date();
   const today = dayKey(now);
   const { start } = dayBounds(today);
-  const { end } = dayBounds(nextDayKey(today));
+  const { end } = dayBounds(nextDayKey(nextDayKey(today)));
   const url = new URL("https://dashboard.elering.ee/api/nps/price");
   url.searchParams.set("start", new Date(start * 1000).toISOString());
   url.searchParams.set("end", new Date(end * 1000).toISOString());

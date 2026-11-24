@@ -158,11 +158,54 @@ test("Täieliku punktide arvuga vigased homsed hinnad katkestavad uuenduse", () 
   }, new Date("2026-11-23T10:00:00Z")), /2026-11-24: puudulikud/);
 });
 
-test("Hinnauuendus järjestab andmed ja ei kaasa järgmise päeva lõpuhetke", () => {
+test("Ülehomse esimene tund säilib pärast keskööd homsel graafikul", () => {
+  for (const todayKey of ["2026-11-23", "2026-03-28", "2026-10-24", "2026-12-31"]) {
+    const tomorrowKey = nextDayKey(todayKey);
+    const dayAfterTomorrowKey = nextDayKey(tomorrowKey);
+    const today = day(todayKey), tomorrow = day(tomorrowKey);
+    const firstHour = day(dayAfterTomorrowKey).slice(0, 4);
+    const snapshot = buildSnapshot({
+      success: true, data: { ee: [...today, ...tomorrow, ...firstHour] },
+    }, new Date(`${todayKey}T12:13:00Z`));
+    const saved = validateSnapshot(JSON.parse(JSON.stringify(snapshot)));
+    assert.deepEqual(saved.days, {
+      [todayKey]: today, [tomorrowKey]: tomorrow, [dayAfterTomorrowKey]: firstHour,
+    });
+    const nextMorning = new Date((dayBounds(tomorrowKey).start + 3600) * 1000);
+    const displayedTomorrow = nextDayKey(dayKey(nextMorning));
+    assert.deepEqual(saved.days[displayedTomorrow], firstHour);
+    const hours = calculatePrices(saved.days[displayedTomorrow], { ...DEFAULT_SETTINGS, interval: "60" });
+    assert.equal(hours.length, 1);
+    assert.equal(hours[0].timestamp, dayBounds(displayedTomorrow).start);
+  }
+});
+
+test("Vigased ülehomsed hinnad lükatakse tagasi nii laadimisel kui hinnafaili lugemisel", () => {
+  const today = day("2026-11-23"), tomorrow = day("2026-11-24");
+  const firstHour = day("2026-11-25").slice(0, 4);
+  const now = new Date("2026-11-23T12:13:00Z");
+  for (const invalid of [
+    firstHour.slice(1),
+    [firstHour[0], firstHour[0], ...firstHour.slice(2)],
+    firstHour.map((row, i) => i === 1 ? { ...row, price: null } : row),
+  ]) {
+    assert.throws(() => buildSnapshot({
+      success: true, data: { ee: [...today, ...tomorrow, ...invalid] },
+    }, now), /2026-11-25: puudulikud/);
+    assert.throws(() => validateSnapshot({
+      schemaVersion: 1, updatedAt: now.toISOString(),
+      days: { "2026-11-23": today, "2026-11-24": tomorrow, "2026-11-25": invalid },
+    }), /2026-11-25: puudulikud/);
+  }
+});
+
+test("Hinnauuendus järjestab kolm päeva ja ei kaasa ülejärgmise päeva lõpuhetke", () => {
   const today = day("2026-11-16"), tomorrow = day("2026-11-17");
-  const extra = { timestamp: dayBounds("2026-11-18").start, price: 999 };
-  const snapshot = buildSnapshot({ success: true, data: { ee: [...today, ...tomorrow, extra].reverse() } },
+  const dayAfterTomorrow = day("2026-11-18").slice(0, 4);
+  const extra = { timestamp: dayBounds("2026-11-19").start, price: 999 };
+  const snapshot = buildSnapshot({ success: true, data: { ee: [...today, ...tomorrow, ...dayAfterTomorrow, extra].reverse() } },
     new Date("2026-11-16T15:00:00Z"));
-  assert.deepEqual(snapshot.days["2026-11-16"], today);
-  assert.deepEqual(snapshot.days["2026-11-17"], tomorrow);
+  assert.deepEqual(snapshot.days, {
+    "2026-11-16": today, "2026-11-17": tomorrow, "2026-11-18": dayAfterTomorrow,
+  });
 });

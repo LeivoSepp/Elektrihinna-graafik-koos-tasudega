@@ -70,18 +70,22 @@ Lisaks käivitub töövoog automaatselt muudatuste saatmisel `main`-harusse, et 
 kood jõuaks veebi. Käsitsi saab selle käivitada Actionsi lehel nupuga **Run workflow**.
 Graafikud kasutavad alati Eesti aega. Homsel graafikul kuvatakse ka ainult
 osaliselt avaldatud hinnad, alustades homsest keskööst; kindlat avaldamiskellaaega ei eeldata.
+Iga hinnauuendus küsib tänase, homse ja ülehomse päeva hindu ning salvestab ka
+ülehomse olemasolevad veerandtunnid. Pärast keskööd kuvatakse need homsel graafikul
+ilma uue allalaadimiseta.
 GitHub Actionsi ajastused võivad hilineda. Ajastatud töövoog peab olema
 vaikimisi harus ning avalikus repositooriumis võib GitHub selle pika
 tegevusetuse järel peatada. Vajadusel lülita see Actionsi lehel uuesti sisse.
-Pärast keskööd puuduvad uue homse päeva hinnad järgmise eduka avaldamiseni.
+Kui ülehomseid hindu uuenduse ajal veel polnud, puuduvad pärast keskööd uue homse
+päeva hinnad järgmise eduka avaldamiseni.
 Kui mõlemal käivitusel jäävad homsed hinnad saamata, puuduvad pärast keskööd
 ka tänased hinnad kuni järgmise eduka uuenduseni.
 
-Kui homne päev on ainult osaliselt saadaval, lisatakse olemasolevad veerandtunnid
+Kui homne või ülehomne päev on ainult osaliselt saadaval, lisatakse olemasolevad veerandtunnid
 hinnafaili. Osaline päev peab algama keskööst ja hinnapunktides ei tohi olla lünki.
 Graafiku ajatelg hõlmab alati kogu päeva; avaldamata tundide ala jääb tühjaks.
 Kellakeeramise päevadel arvestab ajatelg päeva tegeliku 23- või 25-tunnise pikkusega.
-Järgmised uuendused proovivad homseid hindu uuesti.
+Järgmised uuendused proovivad homseid ja ülehomseid hindu uuesti.
 Uuendus ebaõnnestub, kui tänane päev on puudulik, päev sisaldab vigaseid hindu
 või ajatempleid või API tagastab vea. Sel juhul ei alustata uut avaldamist ning eelmine
 veebileht jääb alles. Hinnafaili vanuse ega tänaste hindade puudumise kohta eraldi

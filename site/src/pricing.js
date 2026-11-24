@@ -83,8 +83,9 @@ export function validateSnapshot(data) {
     throw new Error("Hinnafaili vorming on vigane.");
   }
   const tomorrow = nextDayKey(dayKey(new Date(data.updatedAt)));
+  const dayAfterTomorrow = nextDayKey(tomorrow);
   for (const [key, rows] of Object.entries(data.days)) {
-    validateDay(rows, key, { allowPartial: key === tomorrow });
+    validateDay(rows, key, { allowPartial: key === tomorrow || key === dayAfterTomorrow });
   }
   return data;
 }
